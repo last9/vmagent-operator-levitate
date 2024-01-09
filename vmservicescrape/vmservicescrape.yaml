@@ -1,0 +1,215 @@
+# Scrapes vmagent for its performance metrics
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: last9-vmservicescrape-vmagent-01
+  labels:
+    last9: enabled
+spec:
+  endpoints:
+    - port: http
+  namespaceSelector:
+    any: false
+    matchNames: [ "last9-monitoring" ]
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: vmagent
+      app.kubernetes.io/name: vmagent-operator
+      last9_monitoring_agent: vmagent
+      last9: enabled
+---
+# Scrapes kube state metrics for k8s metrics
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: last9-servicescrape-k8s-01
+  labels:
+    last9: enabled
+spec:
+  discoveryRole: "endpoints"
+  jobLabel: job
+  targetLabels: [ ]
+  podTargetLabels: [ ]
+  endpoints:
+    - port: http
+      path: /metrics
+      scheme: http
+      scrapeTimeout: 45s
+      metricRelabelConfigs:
+        - sourceLabels: [ "__address__" ]
+          targetLabel: addr
+      relabelConfigs:
+        - sourceLabels: [ "__address__" ]
+          regex: .+:(.+)
+          replacement: $1
+          targetLabel: addr_port
+  namespaceSelector:
+    any: false
+    matchNames: [ "kube-system" ] # Todo: append namespaces here
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+---
+# Scrapes cadvisor for container metrics
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: last9-servicescrape-metrics-server-01
+  labels:
+    last9: enabled
+spec:
+  namespaceSelector:
+    any: false
+    matchNames: [ "kube-system" ] # Todo: append namespaces here
+  endpoints:
+    - port: https
+      scheme: https
+      scrapeTimeout: 45s
+      tlsConfig:
+        insecureSkipVerify: true
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabelConfigs:
+        - action: labelmap
+          regex: __meta_kubernetes_node_label_(.+)
+        - targetLabel: __address__
+          replacement: kubernetes.default.svc:443
+        - sourceLabels: [ __meta_kubernetes_node_name ]
+          regex: (.+)
+          targetLabel: __metrics_path__
+          replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+  selector:
+    matchLabels:
+      k8s-app: metrics-server
+      last9: enabled
+---
+# Todo: Uncomment this if you have custom application enabled svcs running and you want to scrape them
+# Scrapes node exporter for node metrics
+#apiVersion: operator.victoriametrics.com/v1beta1
+#kind: VMServiceScrape
+#metadata:
+#  name: last9-servicescrape-apps-01
+#  labels:
+#    last9: enabled
+#spec:
+#  namespaceSelector:
+#    any: false
+#    matchNames: [ ] # Todo: Append more namespaces here
+#  endpoints:
+#    - port: metrics
+#      scheme: http
+#      scrapeTimeout: 45s
+#  selector:
+#    matchLabels:
+#      last9: enabled # Todo: Ensure that your services have this label appended as well.
+#      app: "" # Todo: Append app name label here
+---
+# Todo: Uncomment this if you have node exporters svcs running and you want to scrape them
+# Scrapes node exporter for node metrics
+#apiVersion: operator.victoriametrics.com/v1beta1
+#kind: VMServiceScrape
+#metadata:
+#  name: last9-servicescrape-node-exporter-01
+#  labels:
+#    last9: enabled
+#spec:
+#  namespaceSelector:
+#    any: false
+#    matchNames: [ ] # Todo: Append more namespaces here
+#  endpoints:
+#    - port: metrics
+#      scheme: http
+#      scrapeTimeout: 45s
+#  selector:
+#    matchLabels:
+#      last9: enabled
+#      app: prometheus-node-exporter
+#      release: node-exporter
+---
+# Todo: Uncomment this if you have rabbitMQ exporters svcs running and you want to scrape them
+# Scrapes rabbitMQ exporter for metrics
+#apiVersion: operator.victoriametrics.com/v1beta1
+#kind: VMServiceScrape
+#metadata:
+#  name: last9-servicescrape-rabbitmq-exporter-01
+#  labels:
+#    last9: enabled
+#spec:
+#  namespaceSelector:
+#    any: false
+#    matchNames: [  ] # Todo: Append more namespaces here
+#  endpoints:
+#    - port: metrics
+#      scheme: http
+#      scrapeTimeout: 45s
+#  selector:
+#    matchLabels:
+#      last9: enabled
+#      app: prometheus-rabbitmq-exporter
+#      release: rabbitmq-exporter
+---
+# Todo: Uncomment this if you have kafka exporters svcs running and you want to scrape them
+# Scrapes kafka exporter for metrics
+#apiVersion: operator.victoriametrics.com/v1beta1
+#kind: VMServiceScrape
+#metadata:
+#  name: last9-servicescrape-kafka-exporter-01
+#  labels:
+#    last9: enabled
+#spec:
+#  namespaceSelector:
+#    any: false
+#    matchNames: [  ] # Todo: Append more namespaces here
+#  endpoints:
+#    - port: http
+#      scheme: http
+#      scrapeTimeout: 45s
+#  selector:
+#    matchLabels:
+#      last9: enabled
+#      app: prometheus-kafka-exporter
+#      release: kafka-exporter
+---
+# Todo: Uncomment this if you have redis exporters svcs running and you want to scrape them
+# Scrapes redis exporter for metrics
+#apiVersion: operator.victoriametrics.com/v1beta1
+#kind: VMServiceScrape
+#metadata:
+#  name: last9-servicescrape-redis-exporter-01
+#  labels:
+#    last9: enabled
+#spec:
+#  namespaceSelector:
+#    any: false
+#    matchNames: [ ] # Todo: Append more namespaces here
+#  endpoints:
+#    - port: redis-exporter
+#      scheme: http
+#      scrapeTimeout: 45s
+#  selector:
+#    matchLabels:
+#      last9: enabled
+#      app: prometheus-redis-exporter
+#      release: redis-exporter
+---
+# Todo: Uncomment this if you have pushgateway svcs running and you want to scrape them
+# Scrapes pushgateway for metrics
+#apiVersion: operator.victoriametrics.com/v1beta1
+#kind: VMServiceScrape
+#metadata:
+#  name: last9-servicescrape-pushgateway-01
+#  labels:
+#    last9: enabled
+#spec:
+#  namespaceSelector:
+#    any: false
+#    matchNames: [ ] # Todo: Append more namespaces here
+#  endpoints:
+#    - port: http
+#      scheme: http
+#      scrapeTimeout: 45s
+#  selector:
+#    matchLabels:
+#      last9: enabled
+#      app: prometheus-pushgateway
+#      release: prometheus-pushgateway

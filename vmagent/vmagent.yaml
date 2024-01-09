@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: levitate-basic-auth
+  labels:
+    app: vmagent-operator
+    last9: enabled
+type: Opaque
+stringData:
+  levitate_cluster_username: "<levitate_cluster_username>" # Todo: append levitate cluster username
+  levitate_cluster_password: "<levitate_cluster_password>" # Todo: append levitate cluster password
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  name: last9-vmagent-01
+  labels:
+    app.kubernetes.io/instance: vmagent
+    app.kubernetes.io/name: vmagent-operator
+    last9_monitoring_agent: vmagent
+    last9: enabled
+spec:
+  serviceScrapeSelector:
+    matchLabels:
+      last9: enabled
+  podScrapeSelector:
+    matchLabels:
+      last9: enabled
+  externalLabels:
+    via_cluster: <via_cluster> # Todo: add a relevant cluster name. e.g: k8s cluster name
+  remoteWrite:
+    - url: <levitate_remote_write_url> # Todo: append levitate remote write URL
+      basicAuth:
+        username:
+          name: levitate-basic-auth
+          key: username
+        password:
+          name: levitate-basic-auth
+          key: password
+      maxDiskUsagePerURL: 33
+      sendTimeout: 60s
+      showURL: false
+  scrapeInterval: 1m
+  statefulMode: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1Gi
+  statefulStorage:
+    volumeClaimTemplate:
+      spec:
+        resources:
+          requests:
+            storage: 20Gi # Todo: Default is 20Gi. Scale up after you have provisioned more if you need more
+  extraArgs:
+    promscrape.maxScrapeSize: "41928541" # ToDo: This may need fine tuning
+# Todo: Below configs need to be enabled depending upon your affinity towards nodegroups.
+# Todo: Ensure that the below selector terms and tolerations are exactly same as the metadata of the nodegroups itself.
+#  affinity:
+#    nodeAffinity:
+#      requiredDuringSchedulingIgnoredDuringExecution:
+#        nodeSelectorTerms:
+#          - matchExpressions:
+#              - key: intent
+#                operator: In
+#                values:
+#                  - last9deployment
+#  tolerations:
+#    - effect: NoSchedule
+#      key: intent
+#      operator: Equal
+#      value: last9deployment
