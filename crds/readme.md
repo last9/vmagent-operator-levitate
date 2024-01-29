@@ -23,6 +23,7 @@ Ensure you have completed [Step 1](..%2Freadme.md)
    vmprobes.operator.victoriametrics.com                        2023-12-26T12:02:50Z
    vmpodscrapes.operator.victoriametrics.com                    2023-12-26T12:02:50Z
    vmstaticscrapes.operator.victoriametrics.com                 2023-12-26T12:02:51Z
+   ...
     ```
 
    You should see the names of the installed CRDs in the output.

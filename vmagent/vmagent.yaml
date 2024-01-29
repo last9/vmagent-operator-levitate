@@ -1,16 +1,4 @@
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: levitate-basic-auth
-  labels:
-    app: vmagent-operator
-    last9: enabled
-type: Opaque
-stringData:
-  levitate_cluster_username: "<levitate_cluster_username>" # Todo: append levitate cluster username
-  levitate_cluster_password: "<levitate_cluster_password>" # Todo: append levitate cluster password
----
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMAgent
 metadata:
@@ -38,23 +26,16 @@ spec:
         password:
           name: levitate-basic-auth
           key: password
-      maxDiskUsagePerURL: 33
-      sendTimeout: 60s
-      showURL: false
   scrapeInterval: 1m
   statefulMode: true
-  resources:
-    requests:
-      cpu: 100m
-      memory: 1Gi
   statefulStorage:
     volumeClaimTemplate:
       spec:
         resources:
           requests:
             storage: 20Gi # Todo: Default is 20Gi. Scale up after you have provisioned more if you need more
-  extraArgs:
-    promscrape.maxScrapeSize: "41928541" # ToDo: This may need fine tuning
+#  extraArgs:
+#    promscrape.maxScrapeSize: "41928541" # ToDo: This may need fine tuning
 # Todo: Below configs need to be enabled depending upon your affinity towards nodegroups.
 # Todo: Ensure that the below selector terms and tolerations are exactly same as the metadata of the nodegroups itself.
 #  affinity:
